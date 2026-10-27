@@ -13,6 +13,10 @@ namespace WypozyczalniaSzkolna
 {
     public partial class MainWindow : Window
     {
+        private readonly List<Sprzet> _sprzet = new();
+        private readonly List<Wypozyczenie> _historia = new();
+        private int _kolejnyNumerWypozyczenia = 1;
+
         public class Sprzet
         {
             public string Id { get; set; }
@@ -25,6 +29,16 @@ namespace WypozyczalniaSzkolna
                 Nazwa = nazwa;
                 Typ = typ;
             }
+        }
+
+        public class Wypozyczenie
+        {
+            public string Id { get; set; }
+            public string IdSprzetu { get; set; }
+            public string Osoba { get; set; }
+            public DateTime DataWypozyczenia { get; set; }
+            public DateTime? DataZwrotu { get; set; }
+            public bool CzyAktywne { get; set; }
         }
 
         public MainWindow()
