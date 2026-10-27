@@ -124,6 +124,7 @@
                         Foreground="White"
                         FontWeight="Bold"
                         BorderThickness="0"
+                        Click="btnWypozycz_Click"
                         />
 
                 <Button x:Name="btnZwroc"
@@ -133,6 +134,7 @@
                         Foreground="#173D2B"
                         FontWeight="Bold"
                         BorderThickness="0"
+                        Click="btnZwroc_Click"
                        />
             </StackPanel>
         </Grid>

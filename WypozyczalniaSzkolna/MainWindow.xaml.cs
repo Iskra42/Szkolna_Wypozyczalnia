@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Microsoft.VisualBasic;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -110,6 +111,160 @@ namespace WypozyczalniaSzkolna
                 .ToList();
 
             dgSprzet.ItemsSource = wynik;
+        }
+
+        private string PobierzIdSprzetu()
+        {
+            // Najpierw sprawdzamy wpisane ID.
+            string id = txtIdSprzetu.Text.Trim();
+
+            if (!string.IsNullOrWhiteSpace(id))
+                return id;
+
+            // Jeśli pole jest puste, wykorzystujemy zaznaczony wiersz.
+            if (dgSprzet.SelectedItem is WierszSprzetu wybrany)
+                return wybrany.Id;
+
+            return string.Empty;
+        }
+
+        private void btnWypozycz_Click(
+            object sender, RoutedEventArgs e)
+        {
+            string id = PobierzIdSprzetu();
+
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                PokazBlad("Wpisz ID sprzętu lub wybierz sprzęt z listy.");
+                return;
+            }
+
+            Sprzet sprzet = _sprzet.FirstOrDefault(s =>
+                s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+
+            if (sprzet == null)
+            {
+                PokazBlad("Nie znaleziono sprzętu o podanym ID.");
+                return;
+            }
+
+            if (!CzyDostepny(sprzet.Id))
+            {
+                PokazBlad("Ten sprzęt jest już wypożyczony.");
+                return;
+            }
+
+            string osoba = Interaction.InputBox(
+                "Podaj imię i nazwisko osoby wypożyczającej:",
+                "Wypożyczenie sprzętu",
+                "");
+
+            osoba = osoba.Trim();
+
+            if (string.IsNullOrWhiteSpace(osoba))
+            {
+                PokazBlad(
+                    "Nie podano danych osoby. Wypożyczenie anulowano.");
+                return;
+            }
+
+            string idWypozyczenia =
+                $"W{_kolejnyNumerWypozyczenia:000}";
+
+            _kolejnyNumerWypozyczenia++;
+
+            var wypozyczenie = new Wypozyczenie
+            {
+                Id = idWypozyczenia,
+                IdSprzetu = sprzet.Id,
+                Osoba = osoba,
+                DataWypozyczenia = DateTime.Now,
+                DataZwrotu = null,
+                CzyAktywne = true
+            };
+
+            _historia.Add(wypozyczenie);
+
+            OdswiezListe();
+
+            MessageBox.Show(
+                $"Sprzęt: {sprzet.Nazwa}\n" +
+                $"Osoba: {osoba}\n" +
+                $"Numer wypożyczenia: {idWypozyczenia}\n" +
+                $"Data: {wypozyczenie.DataWypozyczenia:dd.MM.yyyy HH:mm}",
+                "Wypożyczenie zarejestrowane",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        private void btnZwroc_Click(
+            object sender, RoutedEventArgs e)
+        {
+            string id = PobierzIdSprzetu();
+
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                PokazBlad(
+                    "Wpisz ID sprzętu, który chcesz zwrócić.");
+                return;
+            }
+
+            Sprzet sprzet = _sprzet.FirstOrDefault(s =>
+                s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+
+            if (sprzet == null)
+            {
+                PokazBlad("Nie znaleziono sprzętu o podanym ID.");
+                return;
+            }
+
+            Wypozyczenie wypozyczenie = _historia
+                .Where(w =>
+                    w.IdSprzetu.Equals(
+                        sprzet.Id,
+                        StringComparison.OrdinalIgnoreCase)
+&& w.CzyAktywne)
+                .OrderByDescending(w => w.DataWypozyczenia)
+                .FirstOrDefault();
+
+            if (wypozyczenie == null)
+            {
+                PokazBlad(
+                    "Ten sprzęt nie ma aktywnego wypożyczenia.");
+                return;
+            }
+
+            MessageBoxResult decyzja = MessageBox.Show(
+                $"Czy przyjąć zwrot sprzętu {sprzet.Nazwa}?\n" +
+                $"Osoba: {wypozyczenie.Osoba}\n" +
+                $"Wypożyczenie: {wypozyczenie.Id}",
+                "Potwierdzenie zwrotu",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (decyzja != MessageBoxResult.Yes)
+                return;
+
+            wypozyczenie.CzyAktywne = false;
+            wypozyczenie.DataZwrotu = DateTime.Now;
+
+            OdswiezListe();
+
+            MessageBox.Show(
+                $"Zwrot sprzętu {sprzet.Nazwa} został zarejestrowany.\n" +
+                $"Numer wypożyczenia: {wypozyczenie.Id}\n" +
+                $"Data zwrotu: {wypozyczenie.DataZwrotu:dd.MM.yyyy HH:mm}",
+                "Zwrot przyjęty",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+        private void PokazBlad(string wiadomosc)
+        {
+            MessageBox.Show(
+                wiadomosc,
+                "Informacja",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 }
