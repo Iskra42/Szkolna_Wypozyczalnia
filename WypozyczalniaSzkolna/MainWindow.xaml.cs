@@ -54,7 +54,62 @@ namespace WypozyczalniaSzkolna
                 new Sprzet("P02", "Projektor BenQ", "Projektor")
             });
 
-            dgSprzet.ItemsSource = _sprzet;
+            txtSzukaj.TextChanged += (s, e) => OdswiezListe();
+            cmbTyp.SelectionChanged += (s, e) => OdswiezListe();
+
+            OdswiezListe();
+        }
+
+        public class WierszSprzetu
+        {
+            public string Id { get; set; }
+            public string Nazwa { get; set; }
+            public string Typ { get; set; }
+            public string Dostepnosc { get; set; }
+        }
+
+        private bool CzyDostepny(string idSprzetu)
+        {
+            return !_historia.Any(w =>
+                w.IdSprzetu.Equals(
+                    idSprzetu,
+                    StringComparison.OrdinalIgnoreCase) && w.CzyAktywne);
+        }
+
+        private void OdswiezListe()
+        {
+            string szukanaFraza = txtSzukaj.Text.Trim();
+
+            string wybranyTyp =
+                (cmbTyp.SelectedItem as ComboBoxItem)?.Content?.ToString()
+                ?? "Cały sprzęt";
+
+            var wynik = _sprzet
+                .Where(s =>
+                    s.Id.Contains(
+                        szukanaFraza,
+                        StringComparison.OrdinalIgnoreCase)
+                    || s.Nazwa.Contains(
+                        szukanaFraza,
+                        StringComparison.OrdinalIgnoreCase)
+                    || s.Typ.Contains(
+                        szukanaFraza,
+                        StringComparison.OrdinalIgnoreCase))
+                .Where(s =>
+                    wybranyTyp == "Cały sprzęt"
+                    || s.Typ == wybranyTyp)
+                .Select(s => new WierszSprzetu
+                {
+                    Id = s.Id,
+                    Nazwa = s.Nazwa,
+                    Typ = s.Typ,
+                    Dostepnosc = CzyDostepny(s.Id)
+                        ? "Dostępny"
+                        : "Wypożyczony"
+                })
+                .ToList();
+
+            dgSprzet.ItemsSource = wynik;
         }
     }
 }
