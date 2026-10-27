@@ -44,6 +44,17 @@ namespace WypozyczalniaSzkolna
         public MainWindow()
         {
             InitializeComponent();
+
+            _sprzet.AddRange(new List<Sprzet>
+            {
+                new Sprzet("L01", "Laptop Dell", "Laptop"),
+                new Sprzet("L02", "Laptop Lenovo", "Laptop"),
+                new Sprzet("L03", "Laptop HP", "Laptop"),
+                new Sprzet("P01", "Projektor Epson", "Projektor"),
+                new Sprzet("P02", "Projektor BenQ", "Projektor")
+            });
+
+            dgSprzet.ItemsSource = _sprzet;
         }
     }
 }
