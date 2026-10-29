@@ -24,6 +24,8 @@ namespace WypozyczalniaSzkolna
         {
             InitializeComponent();
 
+            BazaDanych.Inicjalizuj();
+
             _sprzet.AddRange(new List<Sprzet>
             {
                 new Sprzet("L01", "Laptop Dell", "Laptop"),
@@ -93,13 +95,11 @@ namespace WypozyczalniaSzkolna
 
         private string PobierzIdSprzetu()
         {
-            // Najpierw sprawdzamy wpisane ID.
             string id = txtIdSprzetu.Text.Trim();
 
             if (!string.IsNullOrWhiteSpace(id))
                 return id;
 
-            // Jeśli pole jest puste, wykorzystujemy zaznaczony wiersz.
             if (dgSprzet.SelectedItem is WierszSprzetu wybrany)
                 return wybrany.Id;
 
@@ -187,8 +187,7 @@ namespace WypozyczalniaSzkolna
                 return;
             }
 
-            Sprzet sprzet = _sprzet.FirstOrDefault(s =>
-                s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            Sprzet sprzet = _sprzet.FirstOrDefault(s => s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
 
             if (sprzet == null)
             {
