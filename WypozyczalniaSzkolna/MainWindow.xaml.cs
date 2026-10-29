@@ -9,6 +9,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WypozyczalniaSzkolna.Models;
+using WypozyczalniaSzkolna.Data;
 
 namespace WypozyczalniaSzkolna
 {
@@ -17,30 +19,6 @@ namespace WypozyczalniaSzkolna
         private readonly List<Sprzet> _sprzet = new();
         private readonly List<Wypozyczenie> _historia = new();
         private int _kolejnyNumerWypozyczenia = 1;
-
-        public class Sprzet
-        {
-            public string Id { get; set; }
-            public string Nazwa {  get; set; }
-            public string Typ {  get; set; }
-
-            public Sprzet(string id, string nazwa, string typ)
-            {
-                Id = id;
-                Nazwa = nazwa;
-                Typ = typ;
-            }
-        }
-
-        public class Wypozyczenie
-        {
-            public string Id { get; set; }
-            public string IdSprzetu { get; set; }
-            public string Osoba { get; set; }
-            public DateTime DataWypozyczenia { get; set; }
-            public DateTime? DataZwrotu { get; set; }
-            public bool CzyAktywne { get; set; }
-        }
 
         public MainWindow()
         {
