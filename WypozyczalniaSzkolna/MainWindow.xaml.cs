@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualBasic;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.VisualBasic;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,7 +19,6 @@ namespace WypozyczalniaSzkolna
     {
         private readonly List<Sprzet> _sprzet = new();
         private readonly List<Wypozyczenie> _historia = new();
-        private int _kolejnyNumerWypozyczenia = 1;
 
         public MainWindow()
         {
@@ -26,14 +26,8 @@ namespace WypozyczalniaSzkolna
 
             BazaDanych.Inicjalizuj();
 
-            _sprzet.AddRange(new List<Sprzet>
-            {
-                new Sprzet("L01", "Laptop Dell", "Laptop"),
-                new Sprzet("L02", "Laptop Lenovo", "Laptop"),
-                new Sprzet("L03", "Laptop HP", "Laptop"),
-                new Sprzet("P01", "Projektor Epson", "Projektor"),
-                new Sprzet("P02", "Projektor BenQ", "Projektor")
-            });
+            _sprzet.AddRange(BazaDanych.PobierzSprzet());
+            _historia.AddRange(BazaDanych.PobierzWypozyczenia());
 
             txtSzukaj.TextChanged += (s, e) => OdswiezListe();
             cmbTyp.SelectionChanged += (s, e) => OdswiezListe();
@@ -146,17 +140,27 @@ namespace WypozyczalniaSzkolna
                 return;
             }
 
-            string idWypozyczenia =
-                $"W{_kolejnyNumerWypozyczenia:000}";
+            DateTime teraz = DateTime.Now;
+            int numer;
 
-            _kolejnyNumerWypozyczenia++;
+            try
+            {
+                numer = BazaDanych.DodajWypozyczenie(sprzet.Id, osoba, teraz);
+            }
+            catch (SqliteException)
+            {
+                PokazBlad("Nie udało się zapisać wypożyczenia. Sprzęt może być już wypożyczony.");
+                return;
+            }
+
+            string idWypozyczenia = $"W{numer:000}";
 
             var wypozyczenie = new Wypozyczenie
             {
                 Id = idWypozyczenia,
                 IdSprzetu = sprzet.Id,
                 Osoba = osoba,
-                DataWypozyczenia = DateTime.Now,
+                DataWypozyczenia = teraz,
                 DataZwrotu = null,
                 CzyAktywne = true
             };
@@ -187,7 +191,8 @@ namespace WypozyczalniaSzkolna
                 return;
             }
 
-            Sprzet sprzet = _sprzet.FirstOrDefault(s => s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            Sprzet sprzet = _sprzet.FirstOrDefault(s =>
+                s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
 
             if (sprzet == null)
             {
@@ -200,7 +205,7 @@ namespace WypozyczalniaSzkolna
                     w.IdSprzetu.Equals(
                         sprzet.Id,
                         StringComparison.OrdinalIgnoreCase)
-&& w.CzyAktywne)
+                    && w.CzyAktywne)
                 .OrderByDescending(w => w.DataWypozyczenia)
                 .FirstOrDefault();
 
@@ -222,8 +227,20 @@ namespace WypozyczalniaSzkolna
             if (decyzja != MessageBoxResult.Yes)
                 return;
 
+            DateTime teraz = DateTime.Now;
+
+            try
+            {
+                BazaDanych.ZakonczWypozyczenie(wypozyczenie.Id, teraz);
+            }
+            catch (SqliteException)
+            {
+                PokazBlad("Nie udało się zapisać zwrotu w bazie danych.");
+                return;
+            }
+
             wypozyczenie.CzyAktywne = false;
-            wypozyczenie.DataZwrotu = DateTime.Now;
+            wypozyczenie.DataZwrotu = teraz;
 
             OdswiezListe();
 
@@ -235,6 +252,7 @@ namespace WypozyczalniaSzkolna
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
+
         private void PokazBlad(string wiadomosc)
         {
             MessageBox.Show(
