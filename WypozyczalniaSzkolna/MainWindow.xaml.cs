@@ -1,5 +1,8 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.VisualBasic;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,6 +22,7 @@ namespace WypozyczalniaSzkolna
     {
         private readonly List<Sprzet> _sprzet = new();
         private readonly List<Wypozyczenie> _historia = new();
+        private bool _odswiezanieTypow;
 
         public MainWindow()
         {
@@ -30,8 +34,13 @@ namespace WypozyczalniaSzkolna
             _historia.AddRange(BazaDanych.PobierzWypozyczenia());
 
             txtSzukaj.TextChanged += (s, e) => OdswiezListe();
-            cmbTyp.SelectionChanged += (s, e) => OdswiezListe();
+            cmbTyp.SelectionChanged += (s, e) =>
+            {
+                if (!_odswiezanieTypow)
+                    OdswiezListe();
+            };
 
+            OdswiezTypy();
             OdswiezListe();
         }
 
@@ -72,7 +81,9 @@ namespace WypozyczalniaSzkolna
                         StringComparison.OrdinalIgnoreCase))
                 .Where(s =>
                     wybranyTyp == "Cały sprzęt"
-                    || s.Typ == wybranyTyp)
+                    || s.Typ.Equals(
+                        wybranyTyp,
+                        StringComparison.OrdinalIgnoreCase))
                 .Select(s => new WierszSprzetu
                 {
                     Id = s.Id,
@@ -85,6 +96,166 @@ namespace WypozyczalniaSzkolna
                 .ToList();
 
             dgSprzet.ItemsSource = wynik;
+        }
+
+        private void OdswiezTypy()
+        {
+            string zaznaczony =
+                (cmbTyp.SelectedItem as ComboBoxItem)?.Content?.ToString()
+                ?? "Cały sprzęt";
+
+            _odswiezanieTypow = true;
+
+            cmbTyp.Items.Clear();
+            cmbTyp.Items.Add(new ComboBoxItem { Content = "Cały sprzęt" });
+
+            foreach (string typ in PobierzTypy())
+                cmbTyp.Items.Add(new ComboBoxItem { Content = typ });
+
+            cmbTyp.SelectedItem = cmbTyp.Items
+                .Cast<ComboBoxItem>()
+                .FirstOrDefault(i => string.Equals(
+                    i.Content?.ToString(),
+                    zaznaczony,
+                    StringComparison.OrdinalIgnoreCase))
+                ?? cmbTyp.Items[0];
+
+            _odswiezanieTypow = false;
+        }
+
+        private List<string> PobierzTypy()
+        {
+            return _sprzet
+                .Select(s => s.Typ)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(t => t, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+
+        // Jeśli typ już istnieje (bez względu na wielkość liter),
+        // używamy jego istniejącego zapisu.
+        private string DopasujTyp(string typ)
+        {
+            return PobierzTypy().FirstOrDefault(t =>
+                t.Equals(typ, StringComparison.OrdinalIgnoreCase))
+                ?? typ;
+        }
+
+        private void btnDodaj_Click(
+            object sender, RoutedEventArgs e)
+        {
+            string id = "";
+            string nazwa = "";
+            string typ = "";
+
+            while (true)
+            {
+                var okno = new SprzetOkno(
+                    "Dodawanie sprzętu", PobierzTypy(),
+                    id, nazwa, typ, idEdytowalne: true)
+                {
+                    Owner = this
+                };
+
+                if (okno.ShowDialog() != true)
+                    return;
+
+                id = okno.IdSprzetu;
+                nazwa = okno.Nazwa;
+                typ = DopasujTyp(okno.Typ);
+
+                if (_sprzet.Any(s => s.Id.Equals(
+                        id, StringComparison.OrdinalIgnoreCase)))
+                {
+                    PokazBlad($"Sprzęt o ID \"{id}\" już istnieje.");
+                    continue;
+                }
+
+                break;
+            }
+
+            try
+            {
+                BazaDanych.DodajSprzet(id, nazwa, typ);
+            }
+            catch (SqliteException)
+            {
+                PokazBlad("Nie udało się zapisać sprzętu w bazie danych.");
+                return;
+            }
+
+            _sprzet.Add(new Sprzet(id, nazwa, typ));
+            _sprzet.Sort((a, b) => string.Compare(
+                a.Id, b.Id, StringComparison.OrdinalIgnoreCase));
+
+            OdswiezTypy();
+            OdswiezListe();
+
+            MessageBox.Show(
+                $"Dodano sprzęt: {nazwa} ({id}), typ: {typ}.",
+                "Sprzęt dodany",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        private void btnEdytuj_Click(
+            object sender, RoutedEventArgs e)
+        {
+            string id = dgSprzet.SelectedItem is WierszSprzetu wiersz
+                ? wiersz.Id
+                : txtIdSprzetu.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                PokazBlad("Zaznacz sprzęt na liście lub wpisz jego ID.");
+                return;
+            }
+
+            int indeks = _sprzet.FindIndex(s =>
+                s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+
+            if (indeks < 0)
+            {
+                PokazBlad("Nie znaleziono sprzętu o podanym ID.");
+                return;
+            }
+
+            Sprzet obecny = _sprzet[indeks];
+
+            var okno = new SprzetOkno(
+                "Edycja sprzętu", PobierzTypy(),
+                obecny.Id, obecny.Nazwa, obecny.Typ,
+                idEdytowalne: false)
+            {
+                Owner = this
+            };
+
+            if (okno.ShowDialog() != true)
+                return;
+
+            string nazwa = okno.Nazwa;
+            string typ = DopasujTyp(okno.Typ);
+
+            try
+            {
+                BazaDanych.AktualizujSprzet(obecny.Id, nazwa, typ);
+            }
+            catch (SqliteException)
+            {
+                PokazBlad("Nie udało się zapisać zmian w bazie danych.");
+                return;
+            }
+
+            _sprzet[indeks] = new Sprzet(obecny.Id, nazwa, typ);
+
+            OdswiezTypy();
+            OdswiezListe();
+
+            MessageBox.Show(
+                $"Zapisano zmiany sprzętu {obecny.Id}.",
+                "Sprzęt zaktualizowany",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
 
         private string PobierzIdSprzetu()
@@ -260,6 +431,121 @@ namespace WypozyczalniaSzkolna
                 "Informacja",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// Okno dialogowe do dodawania i edycji sprzętu (budowane w kodzie).
+    /// </summary>
+    public class SprzetOkno : Window
+    {
+        private readonly TextBox _txtId = new();
+        private readonly TextBox _txtNazwa = new();
+        private readonly ComboBox _cmbTyp = new() { IsEditable = true };
+
+        public string IdSprzetu => _txtId.Text.Trim();
+        public string Nazwa => _txtNazwa.Text.Trim();
+        public string Typ => _cmbTyp.Text.Trim();
+
+        public SprzetOkno(
+            string tytul,
+            IEnumerable<string> istniejaceTypy,
+            string id = "",
+            string nazwa = "",
+            string typ = "",
+            bool idEdytowalne = true)
+        {
+            Title = tytul;
+            Width = 380;
+            SizeToContent = SizeToContent.Height;
+            ResizeMode = ResizeMode.NoResize;
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(0xF4, 0xF7, 0xF2));
+
+            _txtId.Text = id;
+            _txtId.IsEnabled = idEdytowalne;
+            _txtNazwa.Text = nazwa;
+
+            foreach (string t in istniejaceTypy)
+                _cmbTyp.Items.Add(t);
+            _cmbTyp.Text = typ;
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+
+            panel.Children.Add(Etykieta("ID sprzętu:"));
+            panel.Children.Add(Pole(_txtId));
+            panel.Children.Add(Etykieta("Nazwa:"));
+            panel.Children.Add(Pole(_txtNazwa));
+            panel.Children.Add(Etykieta("Typ (wybierz lub wpisz nowy):"));
+            panel.Children.Add(Pole(_cmbTyp));
+
+            var btnOk = new Button
+            {
+                Content = "Zapisz",
+                Width = 100,
+                Height = 34,
+                IsDefault = true,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            btnOk.Click += (s, e) => Zatwierdz();
+
+            var btnAnuluj = new Button
+            {
+                Content = "Anuluj",
+                Width = 100,
+                Height = 34,
+                IsCancel = true
+            };
+
+            panel.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 18, 0, 0),
+                Children = { btnOk, btnAnuluj }
+            });
+
+            Content = panel;
+
+            Loaded += (s, e) =>
+            {
+                if (idEdytowalne) _txtId.Focus();
+                else _txtNazwa.Focus();
+            };
+        }
+
+        private void Zatwierdz()
+        {
+            if (string.IsNullOrWhiteSpace(IdSprzetu)
+                || string.IsNullOrWhiteSpace(Nazwa)
+                || string.IsNullOrWhiteSpace(Typ))
+            {
+                MessageBox.Show(
+                    this,
+                    "Uzupełnij ID, nazwę i typ sprzętu.",
+                    "Informacja",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            DialogResult = true;
+        }
+
+        private static TextBlock Etykieta(string tekst) => new()
+        {
+            Text = tekst,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 10, 0, 4)
+        };
+
+        private static Control Pole(Control c)
+        {
+            c.Height = 32;
+            c.VerticalContentAlignment = VerticalAlignment.Center;
+            if (c is TextBox) c.Padding = new Thickness(6, 0, 6, 0);
+            return c;
         }
     }
 }

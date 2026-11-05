@@ -77,7 +77,7 @@ namespace WypozyczalniaSzkolna.Data
             var polaczenie = new SqliteConnection(Polaczenie);
             polaczenie.Open();
 
-           
+
             using var cmd = polaczenie.CreateCommand();
             cmd.CommandText = "PRAGMA foreign_keys = ON;";
             cmd.ExecuteNonQuery();
@@ -98,6 +98,35 @@ namespace WypozyczalniaSzkolna.Data
                 lista.Add(new Sprzet(r.GetString(0), r.GetString(1), r.GetString(2)));
 
             return lista;
+        }
+
+        public static void DodajSprzet(string id, string nazwa, string typ)
+        {
+            using var polaczenie = Otworz();
+            using var cmd = polaczenie.CreateCommand();
+            cmd.CommandText = """
+                INSERT INTO Sprzet (Id, Nazwa, Typ)
+                VALUES ($id, $nazwa, $typ);
+                """;
+            cmd.Parameters.AddWithValue("$id", id);
+            cmd.Parameters.AddWithValue("$nazwa", nazwa);
+            cmd.Parameters.AddWithValue("$typ", typ);
+            cmd.ExecuteNonQuery();
+        }
+
+        public static void AktualizujSprzet(string id, string nazwa, string typ)
+        {
+            using var polaczenie = Otworz();
+            using var cmd = polaczenie.CreateCommand();
+            cmd.CommandText = """
+                UPDATE Sprzet
+                SET Nazwa = $nazwa, Typ = $typ
+                WHERE Id = $id;
+                """;
+            cmd.Parameters.AddWithValue("$id", id);
+            cmd.Parameters.AddWithValue("$nazwa", nazwa);
+            cmd.Parameters.AddWithValue("$typ", typ);
+            cmd.ExecuteNonQuery();
         }
 
         public static List<Wypozyczenie> PobierzWypozyczenia()
@@ -134,7 +163,7 @@ namespace WypozyczalniaSzkolna.Data
             return lista;
         }
 
-        
+
         public static int DodajWypozyczenie(string idSprzetu, string osoba, DateTime data)
         {
             using var polaczenie = Otworz();
@@ -151,7 +180,7 @@ namespace WypozyczalniaSzkolna.Data
             return Convert.ToInt32(cmd.ExecuteScalar());
         }
 
-        
+
         public static void ZakonczWypozyczenie(string idWypozyczenia, DateTime data)
         {
             int numer = int.Parse(idWypozyczenia.Substring(1));
