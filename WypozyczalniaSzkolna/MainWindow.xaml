@@ -156,6 +156,16 @@
                         FontWeight="Bold"
                         BorderThickness="0"
                         Click="btnEdytuj_Click"/>
+
+                <Button x:Name="btnUsun"
+                        Content="Usuń sprzęt"
+                        Width="120" Height="40"
+                        Margin="0,0,0,0"
+                        Background="#C94C4C"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Click="btnUsun_Click"/>
             </StackPanel>
         </Grid>
     </Grid>

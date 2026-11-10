@@ -129,6 +129,18 @@ namespace WypozyczalniaSzkolna.Data
             cmd.ExecuteNonQuery();
         }
 
+        public static void UsunSprzet(string id)
+        {
+            using var polaczenie = Otworz();
+            using var cmd = polaczenie.CreateCommand();
+
+            cmd.CommandText = """DELETE FROM Sprzet WHERE Id = $id;""";
+
+            cmd.Parameters.AddWithValue("$id", id);
+
+            cmd.ExecuteNonQuery();
+        }
+
         public static List<Wypozyczenie> PobierzWypozyczenia()
         {
             var lista = new List<Wypozyczenie>();

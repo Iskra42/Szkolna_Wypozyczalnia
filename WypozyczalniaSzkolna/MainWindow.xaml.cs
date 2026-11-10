@@ -132,8 +132,6 @@ namespace WypozyczalniaSzkolna
                 .ToList();
         }
 
-        // Jeśli typ już istnieje (bez względu na wielkość liter),
-        // używamy jego istniejącego zapisu.
         private string DopasujTyp(string typ)
         {
             return PobierzTypy().FirstOrDefault(t =>
@@ -254,6 +252,75 @@ namespace WypozyczalniaSzkolna
             MessageBox.Show(
                 $"Zapisano zmiany sprzętu {obecny.Id}.",
                 "Sprzęt zaktualizowany",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        private void btnUsun_Click(object sender, RoutedEventArgs e)
+        {
+            string id = dgSprzet.SelectedItem is WierszSprzetu wiersz
+                ? wiersz.Id
+                : txtIdSprzetu.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                PokazBlad("Zaznacz sprzęt na liście lub wpisz jego ID.");
+                return;
+            }
+
+            Sprzet sprzet = _sprzet.FirstOrDefault(s =>
+                s.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+
+            if (sprzet == null)
+            {
+                PokazBlad("Nie znaleziono sprzętu o podanym ID.");
+                return;
+            }
+
+            bool maHistorie = _historia.Any(w =>
+                w.IdSprzetu.Equals(
+                    sprzet.Id,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (maHistorie)
+            {
+                PokazBlad(
+                    "Nie można usunąć tego sprzętu, ponieważ posiada historię wypożyczeń.");
+                return;
+            }
+
+            MessageBoxResult decyzja = MessageBox.Show(
+                $"Czy na pewno chcesz usunąć sprzęt?\n\n" +
+                $"ID: {sprzet.Id}\n" +
+                $"Nazwa: {sprzet.Nazwa}\n" +
+                $"Typ: {sprzet.Typ}",
+                "Potwierdzenie usunięcia",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (decyzja != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                BazaDanych.UsunSprzet(sprzet.Id);
+            }
+            catch (SqliteException)
+            {
+                PokazBlad("Nie udało się usunąć sprzętu z bazy danych.");
+                return;
+            }
+
+            _sprzet.Remove(sprzet);
+
+            txtIdSprzetu.Clear();
+
+            OdswiezTypy();
+            OdswiezListe();
+
+            MessageBox.Show(
+                $"Sprzęt {sprzet.Nazwa} ({sprzet.Id}) został usunięty.",
+                "Sprzęt usunięty",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
