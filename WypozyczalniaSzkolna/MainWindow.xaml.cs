@@ -34,14 +34,18 @@ namespace WypozyczalniaSzkolna
             _historia.AddRange(BazaDanych.PobierzWypozyczenia());
 
             txtSzukaj.TextChanged += (s, e) => OdswiezListe();
-            cmbTyp.SelectionChanged += (s, e) =>
+            cmbTyp.SelectionChanged += (s, e) => 
             {
                 if (!_odswiezanieTypow)
                     OdswiezListe();
             };
 
+            txtSzukajHistorii.TextChanged += (s, e) => OdswiezHistorie();
+            cmbStatusHistorii.SelectionChanged += (s, e) => OdswiezHistorie();
+
             OdswiezTypy();
             OdswiezListe();
+            OdswiezHistorie();
         }
 
         public class WierszSprzetu
@@ -50,6 +54,18 @@ namespace WypozyczalniaSzkolna
             public string Nazwa { get; set; }
             public string Typ { get; set; }
             public string Dostepnosc { get; set; }
+        }
+
+        public class WierszHistorii
+        {
+            public string Id { get; set; }
+            public string IdSprzetu { get; set; }
+            public string NazwaSprzetu { get; set; }
+            public string TypSprzetu { get; set; }
+            public string Osoba { get; set; }
+            public string DataWypozyczenia { get; set; }
+            public string DataZwrotu { get; set; }
+            public string Status { get; set; }
         }
 
         private bool CzyDostepny(string idSprzetu)
@@ -96,6 +112,49 @@ namespace WypozyczalniaSzkolna
                 .ToList();
 
             dgSprzet.ItemsSource = wynik;
+        }
+
+        private void OdswiezHistorie()
+        {
+            string fraza = txtSzukajHistorii.Text.Trim();
+            string filtrStatusu =
+                (cmbStatusHistorii.SelectedItem as ComboBoxItem)?.Content?.ToString()
+                ?? "Wszystkie";
+
+            var wynik = _historia
+                .OrderByDescending(w => w.DataWypozyczenia)
+                .Select(w =>
+                {
+                    Sprzet? sprzet = _sprzet.FirstOrDefault(s =>
+                        s.Id.Equals(w.IdSprzetu, StringComparison.OrdinalIgnoreCase));
+
+                    return new WierszHistorii
+                    {
+                        Id = w.Id,
+                        IdSprzetu = w.IdSprzetu,
+                        NazwaSprzetu = sprzet?.Nazwa ?? "(sprzęt niedostępny w wykazie)",
+                        TypSprzetu = sprzet?.Typ ?? "—",
+                        Osoba = w.Osoba,
+                        DataWypozyczenia = w.DataWypozyczenia.ToString("dd.MM.yyyy HH:mm"),
+                        DataZwrotu = w.DataZwrotu?.ToString("dd.MM.yyyy HH:mm") ?? "—",
+                        Status = w.CzyAktywne ? "Wypożyczone" : "Zwrócone"
+                    };
+                })
+                .Where(w =>
+                    string.IsNullOrWhiteSpace(fraza)
+                    || w.Id.Contains(fraza, StringComparison.OrdinalIgnoreCase)
+                    || w.IdSprzetu.Contains(fraza, StringComparison.OrdinalIgnoreCase)
+                    || w.NazwaSprzetu.Contains(fraza, StringComparison.OrdinalIgnoreCase)
+                    || w.TypSprzetu.Contains(fraza, StringComparison.OrdinalIgnoreCase)
+                    || w.Osoba.Contains(fraza, StringComparison.OrdinalIgnoreCase))
+                .Where(w =>
+                    filtrStatusu == "Wszystkie"
+                    || (filtrStatusu == "Wypożyczone" && w.Status == "Wypożyczone")
+                    || (filtrStatusu == "Zwrócone" && w.Status == "Zwrócone"))
+                .ToList();
+
+            dgHistoria.ItemsSource = wynik;
+            txtLiczbaWynikow.Text = $"Liczba wypożyczeń: {wynik.Count}";
         }
 
         private void OdswiezTypy()
@@ -248,6 +307,7 @@ namespace WypozyczalniaSzkolna
 
             OdswiezTypy();
             OdswiezListe();
+            OdswiezHistorie();
 
             MessageBox.Show(
                 $"Zapisano zmiany sprzętu {obecny.Id}.",
@@ -406,6 +466,7 @@ namespace WypozyczalniaSzkolna
             _historia.Add(wypozyczenie);
 
             OdswiezListe();
+            OdswiezHistorie();
 
             MessageBox.Show(
                 $"Sprzęt: {sprzet.Nazwa}\n" +
@@ -481,6 +542,7 @@ namespace WypozyczalniaSzkolna
             wypozyczenie.DataZwrotu = teraz;
 
             OdswiezListe();
+            OdswiezHistorie();
 
             MessageBox.Show(
                 $"Zwrot sprzętu {sprzet.Nazwa} został zarejestrowany.\n" +

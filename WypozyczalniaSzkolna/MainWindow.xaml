@@ -28,145 +28,253 @@
         </Border>
 
 
-        <Grid Grid.Row="1" Margin="0,20,0,15">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="180"/>
-            </Grid.ColumnDefinitions>
+        <TabControl x:Name="tabGlowny"
+            Grid.Row="1"
+            Margin="0,16,0,0"
+            FontSize="14">
 
-            <TextBox x:Name="txtSzukaj"
-                     Height="38" FontSize="15"
-                     Padding="10"
-                     VerticalContentAlignment="Center"
-                     ToolTip="Wpisz ID, nazwę lub typ sprzętu"
-                     Margin="0,0,15,0"/>
+            <!-- ZAKŁADKA 1: LISTA SPRZĘTU -->
+            <TabItem Header="Lista sprzętu">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-            <ComboBox x:Name="cmbTyp"
-                      Grid.Column="1"
-                      Height="38" FontSize="15"
-                      VerticalContentAlignment="Center"
-                      SelectedIndex="0">
-                <ComboBoxItem Content="Cały sprzęt"/>
-                <ComboBoxItem Content="Laptop"/>
-                <ComboBoxItem Content="Projektor"/>
-            </ComboBox>
-        </Grid>
+                    <Grid Grid.Row="0" Margin="0,2,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="190"/>
+                        </Grid.ColumnDefinitions>
 
+                        <TextBox x:Name="txtSzukaj"
+                         Height="38" FontSize="15"
+                         Padding="10"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Wpisz ID, nazwę lub typ sprzętu"
+                         Margin="0,0,15,0"/>
 
-        <Border Grid.Row="2" Background="White"
-                BorderBrush="#D6E2D1" BorderThickness="1"
-                CornerRadius="6" Padding="15">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                        <ComboBox x:Name="cmbTyp"
+                          Grid.Column="1"
+                          Height="38" FontSize="15"
+                          VerticalContentAlignment="Center"
+                          SelectedIndex="0">
+                            <ComboBoxItem Content="Cały sprzęt"/>
+                            <ComboBoxItem Content="Laptop"/>
+                            <ComboBoxItem Content="Projektor"/>
+                        </ComboBox>
+                    </Grid>
 
-                <TextBlock Text="Lista sprzętu"
-                           FontSize="20" FontWeight="Bold"
-                           Foreground="#164B37"
-                           Margin="0,0,0,12"/>
+                    <Border Grid.Row="1" Background="White"
+                    BorderBrush="#D6E2D1" BorderThickness="1"
+                    CornerRadius="6" Padding="15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                <DataGrid x:Name="dgSprzet"
-                          Grid.Row="1"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          CanUserAddRows="False"
-                          SelectionMode="Single"
-                          HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
-                          FontSize="14"
-                          RowHeight="38">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="ID"
-                                            Binding="{Binding Id}"
-                                            Width="70"/>
-                        <DataGridTextColumn Header="Nazwa sprzętu"
-                                            Binding="{Binding Nazwa}"
-                                            Width="*"/>
-                        <DataGridTextColumn Header="Typ"
-                                            Binding="{Binding Typ}"
-                                            Width="130"/>
-                        <DataGridTextColumn Header="Dostępność"
-                                            Binding="{Binding Dostepnosc}"
-                                            Width="150"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </Grid>
-        </Border>
+                            <TextBlock Text="Lista sprzętu"
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="#164B37"
+                               Margin="0,0,0,12"/>
 
+                            <DataGrid x:Name="dgSprzet"
+                              Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              FontSize="14"
+                              RowHeight="38">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID"
+                                                Binding="{Binding Id}"
+                                                Width="80"/>
+                                    <DataGridTextColumn Header="Nazwa sprzętu"
+                                                Binding="{Binding Nazwa}"
+                                                Width="*"/>
+                                    <DataGridTextColumn Header="Typ"
+                                                Binding="{Binding Typ}"
+                                                Width="150"/>
+                                    <DataGridTextColumn Header="Dostępność"
+                                                Binding="{Binding Dostepnosc}"
+                                                Width="160"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
 
-        <Grid Grid.Row="3" Margin="0,18,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="2" Margin="0,15,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="190"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-            <StackPanel>
-                <TextBlock Text="ID sprzętu:"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,5"/>
-                <TextBox x:Name="txtIdSprzetu"
-                         Height="35" Width="180"
-                         HorizontalAlignment="Left"
-                         Padding="8"/>
-            </StackPanel>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="ID sprzętu:"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,5"/>
+                            <TextBox x:Name="txtIdSprzetu"
+                             Height="35" Width="180"
+                             HorizontalAlignment="Left"
+                             Padding="8"/>
+                        </StackPanel>
 
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
-                        VerticalAlignment="Bottom">
+                        <WrapPanel Grid.Column="1"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Bottom">
+                            <Button x:Name="btnWypozycz"
+                            Content="Wypożycz"
+                            Width="110" Height="40"
+                            Margin="0,0,8,0"
+                            Background="#245A83"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            BorderThickness="0"
+                            Click="btnWypozycz_Click"/>
 
-                <Button x:Name="btnWypozycz"
-                        Content="Wypożycz"
-                        Width="130" Height="40"
-                        Margin="0,0,10,0"
-                        Background="#245A83"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        BorderThickness="0"
-                        Click="btnWypozycz_Click"
-                        />
+                            <Button x:Name="btnZwroc"
+                            Content="Przyjmij zwrot"
+                            Width="130" Height="40"
+                            Margin="0,0,8,0"
+                            Background="#245A83"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            BorderThickness="0"
+                            Click="btnZwroc_Click"/>
 
-                <Button x:Name="btnZwroc"
-                        Content="Przyjmij zwrot"
-                        Width="145" Height="40"
-                        Background="#245A83"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        Margin="0,0,10,0"
-                        BorderThickness="0"
-                        Click="btnZwroc_Click"
-                       />
-                <Button x:Name="btnDodaj"
-                        Content="Dodaj sprzęt"
-                        Width="120" Height="40"
-                        Margin="0,0,10,0"
-                        Background="#91C47E"
-                        Foreground="#173D2B"
-                        FontWeight="Bold"
-                        BorderThickness="0"
-                        Click="btnDodaj_Click"/>
+                            <Button x:Name="btnDodaj"
+                            Content="Dodaj sprzęt"
+                            Width="110" Height="40"
+                            Margin="0,0,8,0"
+                            Background="#91C47E"
+                            Foreground="#173D2B"
+                            FontWeight="Bold"
+                            BorderThickness="0"
+                            Click="btnDodaj_Click"/>
 
-                <Button x:Name="btnEdytuj"
-                        Content="Edytuj sprzęt"
-                        Width="120" Height="40"
-                        Margin="0,0,25,0"
-                        Background="#91C47E"
-                        Foreground="#173D2B"
-                        FontWeight="Bold"
-                        BorderThickness="0"
-                        Click="btnEdytuj_Click"/>
+                            <Button x:Name="btnEdytuj"
+                            Content="Edytuj sprzęt"
+                            Width="110" Height="40"
+                            Margin="0,0,8,0"
+                            Background="#91C47E"
+                            Foreground="#173D2B"
+                            FontWeight="Bold"
+                            BorderThickness="0"
+                            Click="btnEdytuj_Click"/>
 
-                <Button x:Name="btnUsun"
-                        Content="Usuń sprzęt"
-                        Width="120" Height="40"
-                        Margin="0,0,0,0"
-                        Background="#C94C4C"
-                        Foreground="White"
-                        FontWeight="Bold"
-                        BorderThickness="0"
-                        Click="btnUsun_Click"/>
-            </StackPanel>
-        </Grid>
+                            <Button x:Name="btnUsun"
+                            Content="Usuń sprzęt"
+                            Width="110" Height="40"
+                            Background="#C94C4C"
+                            Foreground="White"
+                            FontWeight="Bold"
+                            BorderThickness="0"
+                            Click="btnUsun_Click"/>
+                        </WrapPanel>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ZAKŁADKA 2: HISTORIA WYPOŻYCZEŃ -->
+            <TabItem Header="Historia wypożyczeń">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,2,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="210"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox x:Name="txtSzukajHistorii"
+                         Height="38" FontSize="14"
+                         Padding="10"
+                         VerticalContentAlignment="Center"
+                         Margin="0,0,15,0"
+                         ToolTip="Szukaj po numerze wypożyczenia, sprzęcie lub osobie"/>
+
+                        <ComboBox x:Name="cmbStatusHistorii"
+                          Grid.Column="1"
+                          Height="38" FontSize="14"
+                          VerticalContentAlignment="Center"
+                          SelectedIndex="0">
+                            <ComboBoxItem Content="Wszystkie"/>
+                            <ComboBoxItem Content="Wypożyczone"/>
+                            <ComboBoxItem Content="Zwrócone"/>
+                        </ComboBox>
+                    </Grid>
+
+                    <Border Grid.Row="1" Background="White"
+                    BorderBrush="#D6E2D1" BorderThickness="1"
+                    CornerRadius="6" Padding="12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Historia wszystkich wypożyczeń"
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="#164B37"
+                               Margin="3,0,0,12"/>
+
+                            <DataGrid x:Name="dgHistoria"
+                              Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              FontSize="13"
+                              RowHeight="36">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nr wypożyczenia"
+                                                Binding="{Binding Id}"
+                                                Width="125"/>
+                                    <DataGridTextColumn Header="ID sprzętu"
+                                                Binding="{Binding IdSprzetu}"
+                                                Width="90"/>
+                                    <DataGridTextColumn Header="Nazwa sprzętu"
+                                                Binding="{Binding NazwaSprzetu}"
+                                                Width="*"/>
+                                    <DataGridTextColumn Header="Typ"
+                                                Binding="{Binding TypSprzetu}"
+                                                Width="110"/>
+                                    <DataGridTextColumn Header="Osoba wypożyczająca"
+                                                Binding="{Binding Osoba}"
+                                                Width="170"/>
+                                    <DataGridTextColumn Header="Data wypożyczenia"
+                                                Binding="{Binding DataWypozyczenia}"
+                                                Width="145"/>
+                                    <DataGridTextColumn Header="Data zwrotu"
+                                                Binding="{Binding DataZwrotu}"
+                                                Width="145"/>
+                                    <DataGridTextColumn Header="Status"
+                                                Binding="{Binding Status}"
+                                                Width="110"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock x:Name="txtLiczbaWynikow"
+                       Grid.Row="2"
+                       FontWeight="SemiBold"
+                       Foreground="#234D37"
+                       Margin="3,12,0,0"
+                       VerticalAlignment="Center"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>
