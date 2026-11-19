@@ -34,7 +34,7 @@ namespace WypozyczalniaSzkolna
             _historia.AddRange(BazaDanych.PobierzWypozyczenia());
 
             txtSzukaj.TextChanged += (s, e) => OdswiezListe();
-            cmbTyp.SelectionChanged += (s, e) => 
+            cmbTyp.SelectionChanged += (s, e) =>
             {
                 if (!_odswiezanieTypow)
                     OdswiezListe();
@@ -198,38 +198,60 @@ namespace WypozyczalniaSzkolna
                 ?? typ;
         }
 
+        private static char PobierzPrefiks(string typ)
+        {
+            foreach (char c in (typ ?? "").Trim().Normalize(NormalizationForm.FormD))
+            {
+                char znak = c switch { 'ł' => 'l', 'Ł' => 'L', _ => c };
+
+                if (znak is >= 'a' and <= 'z' or >= 'A' and <= 'Z')
+                    return char.ToUpperInvariant(znak);
+            }
+
+            return 'X';
+        }
+
+        private string GenerujId(string typ)
+        {
+            if (string.IsNullOrWhiteSpace(typ))
+                return "";
+
+            char prefiks = PobierzPrefiks(typ);
+
+            int maks = _sprzet
+                .Select(s => s.Id)
+                .Where(id => id.Length > 1
+                    && char.ToUpperInvariant(id[0]) == prefiks
+                    && int.TryParse(
+                        id.Substring(1),
+                        System.Globalization.NumberStyles.None,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out _))
+                .Select(id => int.Parse(
+                    id.Substring(1),
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .DefaultIfEmpty(0)
+                .Max();
+
+            return $"{prefiks}{maks + 1:00}";
+        }
+
         private void btnDodaj_Click(
             object sender, RoutedEventArgs e)
         {
-            string id = "";
-            string nazwa = "";
-            string typ = "";
-
-            while (true)
+            var okno = new SprzetOkno(
+                "Dodawanie sprzętu", PobierzTypy(),
+                generatorId: GenerujId)
             {
-                var okno = new SprzetOkno(
-                    "Dodawanie sprzętu", PobierzTypy(),
-                    id, nazwa, typ, idEdytowalne: true)
-                {
-                    Owner = this
-                };
+                Owner = this
+            };
 
-                if (okno.ShowDialog() != true)
-                    return;
+            if (okno.ShowDialog() != true)
+                return;
 
-                id = okno.IdSprzetu;
-                nazwa = okno.Nazwa;
-                typ = DopasujTyp(okno.Typ);
-
-                if (_sprzet.Any(s => s.Id.Equals(
-                        id, StringComparison.OrdinalIgnoreCase)))
-                {
-                    PokazBlad($"Sprzęt o ID \"{id}\" już istnieje.");
-                    continue;
-                }
-
-                break;
-            }
+            string nazwa = okno.Nazwa;
+            string typ = DopasujTyp(okno.Typ);
+            string id = GenerujId(typ);
 
             try
             {
@@ -572,6 +594,8 @@ namespace WypozyczalniaSzkolna
         private readonly TextBox _txtNazwa = new();
         private readonly ComboBox _cmbTyp = new() { IsEditable = true };
 
+        private readonly Func<string, string>? _generatorId;
+
         public string IdSprzetu => _txtId.Text.Trim();
         public string Nazwa => _txtNazwa.Text.Trim();
         public string Typ => _cmbTyp.Text.Trim();
@@ -582,8 +606,11 @@ namespace WypozyczalniaSzkolna
             string id = "",
             string nazwa = "",
             string typ = "",
-            bool idEdytowalne = true)
+            bool idEdytowalne = false,
+            Func<string, string>? generatorId = null)
         {
+            _generatorId = generatorId;
+
             Title = tytul;
             Width = 380;
             SizeToContent = SizeToContent.Height;
@@ -594,6 +621,7 @@ namespace WypozyczalniaSzkolna
 
             _txtId.Text = id;
             _txtId.IsEnabled = idEdytowalne;
+            _txtId.IsReadOnly = !idEdytowalne;
             _txtNazwa.Text = nazwa;
 
             foreach (string t in istniejaceTypy)
@@ -602,12 +630,25 @@ namespace WypozyczalniaSzkolna
 
             var panel = new StackPanel { Margin = new Thickness(20) };
 
-            panel.Children.Add(Etykieta("ID sprzętu:"));
+            panel.Children.Add(Etykieta(
+                _generatorId != null
+                    ? "ID sprzętu (nadawane automatycznie):"
+                    : "ID sprzętu:"));
             panel.Children.Add(Pole(_txtId));
             panel.Children.Add(Etykieta("Nazwa:"));
             panel.Children.Add(Pole(_txtNazwa));
             panel.Children.Add(Etykieta("Typ (wybierz lub wpisz nowy):"));
             panel.Children.Add(Pole(_cmbTyp));
+
+            if (_generatorId != null)
+            {
+                _txtId.IsEnabled = false;
+                _cmbTyp.AddHandler(
+                    System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
+                    new TextChangedEventHandler((s, e) => OdswiezPodgladId()));
+                _cmbTyp.SelectionChanged += (s, e) => OdswiezPodgladId();
+                OdswiezPodgladId();
+            }
 
             var btnOk = new Button
             {
@@ -639,20 +680,28 @@ namespace WypozyczalniaSzkolna
 
             Loaded += (s, e) =>
             {
-                if (idEdytowalne) _txtId.Focus();
-                else _txtNazwa.Focus();
+                _txtNazwa.Focus();
             };
+        }
+
+        private void OdswiezPodgladId()
+        {
+            string typ = _cmbTyp.SelectedItem as string ?? _cmbTyp.Text;
+            string id = _generatorId?.Invoke(typ.Trim()) ?? "";
+            _txtId.Text = string.IsNullOrEmpty(id) ? "(wybierz typ)" : id;
         }
 
         private void Zatwierdz()
         {
-            if (string.IsNullOrWhiteSpace(IdSprzetu)
+            bool idWymagane = _generatorId == null;
+
+            if ((idWymagane && string.IsNullOrWhiteSpace(IdSprzetu))
                 || string.IsNullOrWhiteSpace(Nazwa)
                 || string.IsNullOrWhiteSpace(Typ))
             {
                 MessageBox.Show(
                     this,
-                    "Uzupełnij ID, nazwę i typ sprzętu.",
+                    "Uzupełnij nazwę i typ sprzętu.",
                     "Informacja",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
